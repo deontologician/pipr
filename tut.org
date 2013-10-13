@@ -1,0 +1,701 @@
+#+OPTIONS: toc:nil H:2 num:nil author:nil timestamp:nil title:nil
+* Diving into Angular
+
+** What you will learn
+1. What AngularJS is for, and what makes it a good choice for building web apps
+2. How to get up and running quickly with angular using Yeoman and bower
+3. How to use the basic angular concepts of directives, controllers, services
+   and filters to create a web app that can talk to a real RESTful api backend.
+4. Along the way we'll touch on some of the more advanced angular concepts that
+   you'll want to be aware of so you can look them up later when you need them.
+
+** What makes AngularJS great?
+
+AngularJS is part of a new breed of Javascript MVC frameworks that bring order
+to the chaotic world of heavily interactive web applications. Writing large web
+apps in jQuery alone simply becomes a twisted mess of callbacks and dom
+manipulation. These new MVC frameworks are a recognition that separation of
+concerns is a good idea if you want to build something maintainable.
+
+Angular distinguishes itself from other javascript MVC frameworks like
+Backbone.js and Ember.js by taking a completely different perspective on how to
+do the view. Simply put, Angular doesn't parse a template string and then insert
+it into the DOM with _innerHTML_, instead it let you use custom html tags,
+attributes, and classes to extend the behavior of HTML. The result is that you
+can create a completely declarative (logic free) view and have your controllers
+perform the logic without touching the DOM. This splitting up of
+responsibilities makes them much more testable and maintainable.
+
+** Getting Started
+In this tutorial we're going to create a barebones Twitter-like application
+called Pipr. Pipr allows you to create "pips" which are short 100 character or
+less "pips" that show up on the page in reverse chronological order. You can add tags to
+your pips, and you can post them with any name you like. In addition, you can
+delete your pips.
+
+The rest of this tutorial assumes you have nodejs installed on your
+computer. Instructions for installing it can be found at /nodejs.org/, or you
+can install it from your operating system's package manager.
+
+Next, we want to install yeoman. Yeoman is a great tool for streamlining your
+javascript development workflow, and they have an excellent AngularJS plugin.
+First, install yeoman with _npm_:
+
+#+BEGIN_SRC bash
+$ npm install -g yo
+#+END_SRC
+
+Then, you'll want to create your project directory and initialize your angular
+project. We'll call the directory /pipr/. You can name it whatever you want, but
+yeoman uses the directory name to name the App itself, so you may have to tweak
+some of the examples if you call your directory something else.
+
+#+BEGIN_SRC bash
+$ mkdir pipr
+$ cd pipr
+$ yo angular
+#+END_SRC
+
+This will ask us a few questions.
+
+#+BEGIN_SRC bash
+[?] Would you like to include Twitter Bootstrap? (Y/n) 
+#+END_SRC
+
+We do want twitter bootstrap, so say yes to this.
+
+#+BEGIN_SRC bash
+[?] Would you like to use the SCSS version of Twitter Bootstrap with the Compass CSS Authoring Framework? (Y/n)
+#+END_SRC
+
+While SCSS is a great CSS authoring tool, it isn't what we're focusing on in
+this tutorial, just say No for now.
+
+On the next question, you'll use spacebar to de-select cookies and sanitize,
+then hit enter when you're done.
+
+#+BEGIN_SRC bash
+[?] Which modules would you like to include? 
+ ⬢ angular-resource.js
+‣⬡ angular-cookies.js
+ ⬡ angular-sanitize.js
+#+END_SRC
+
+This will install a lot and then create the scaffolding for your project. Here
+are the files we care about at the moment:
+
+#+BEGIN_SRC bash
+app/scripts
+├── app.js
+└── controllers
+    └── main.js
+app/views
+└── main.html
+app/styles
+└── main.css
+index.html
+#+END_SRC
+
+To check that everything is working, do:
+
+#+BEGIN_SRC bash
+$ grunt server
+#+END_SRC
+
+That will start a small nodejs server that will serve up your app on
+/localhost:9000/ and will auto-refresh when you change any files. This great!
+Yeoman has done a ton of gruntwork for us, and we can get straight to the good
+stuff now. Let's open up ~app/views/main.html~, then delete everything inside
+it. Now we can begin seeing where angularjs shines: declarative views.
+
+#+BEGIN_SRC html
+<div class="hero-unit">
+  <h1>Pipr</h1>
+  <div ng-repeat="pip in pips">
+    <pip current-pip="pip" class="well">
+      <b>{{pip.name}}</b><br/>
+      <i>{{pip.pip}}</i>
+    </pip>
+  </div>
+</div>
+#+END_SRC
+
+There's a lot going on here, but I bet, even without knowing Angular, you can
+kind of see what it is trying to do. For every pip in some kind of list of pips,
+we render the pip name in bold and the pip text in italics. Angular uses the
+common "{{}}" syntax for templates, with the exception that your template must
+be valid html! This is because it gets rendered by your browser before angular
+gets its hands on it. So use "{{}}" syntax only inside text, not across tags
+etc.
+
+What is this ~<pip>~
+tag though? That isn't a part of html, how can that be legal? And what does the
+pip tag mean? That's where Angular comes in. Let's go into
+~app/scripts/controllers/main.js~ and start looking around.
+
+#+BEGIN_SRC javascript
+
+'use strict';
+
+angular.module('piprApp')
+  .controller('MainCtrl', function ($scope) {
+    $scope.awesomeThings = [
+      'HTML5 Boilerplate',
+      'AngularJS',
+      'Karma'
+    ];
+  });
+
+
+#+END_SRC
+
+Yeoman has done a lot for us we can see. As we noted before, it's automatically
+named our application 'piprApp' based on the directory name. This file defines
+what's called a *controller* in Angular. Controllers are where the bulk of your
+logic should be. Controllers never muck with the DOM, they simply talk to the
+model, and the view talks to the controller. In Angular, we keep our models in
+the ~$scope~ object, which angular passes to us here. Scopes are hierarchical in
+Angular, and each controller creates a new one. Angular also watches for changes
+to attributes of the scope.
+
+Anything we need from Angular, we just ask for in the arguments to the
+controller, and Angular gets them to us using *dependency injection*. It's
+almost like magic. This is pretty nice and frees us from having to worry about
+how to get what we need, and whether it's visible etc. Just ask Angular, and it
+hands it to you. Below, we'll ask for the ~$scope~ object, and Angular will
+inject it.
+
+Go ahead and alter the ~main.js~ file so it looks like this:
+
+#+BEGIN_SRC javascript
+'use strict';
+
+angular.module('piprApp')
+  .controller('MainCtrl', function ($scope) {
+    // $scope is magically injected by angular, just because we named the argument $scope
+    $scope.pips = [
+     {id: 1, name: 'Jim', pip: 'Celebrity gossip is crucial to life success...'},
+     {id: 2, name: 'Barry', pip: 'Just ate breakfast. Going to watch TV'}
+    ]
+   });
+
+#+END_SRC
+
+For now, we've added some fake pips to use as an example. We don't yet know
+where the ~<pip>~ tag is coming from, but now we've defined the pips collection
+we iterate over. Controllers define the behavior we want, and set up the
+models. You'll also note that our model is just a plain of javascript object. We
+don't need to wrap our model or subclass anything, we can use whatever we
+want. This is especially cool when we start talking to the server because we can
+use exactly what the server gives us as our model, and send it right back to
+them without having to do a bunch of transformations (that is, assuming the
+server sends JSON).
+
+** Directives
+If you went to go check your browser to see what happened, you'll notice that
+we're getting our pips showing up, but it looks a bit funky/broken. We'll fix
+that next by defining what our ~<pip>~ tag does. We do this by creating what
+Angular calls a "directive". Directives are great because they allow us to
+extend the functionality of html by making certain attributes and tags do
+special functionality. Directives give us the power to bend html to our will,
+while leaving our controllers free from DOM manipulation and our view (the html)
+free from inline javascript needed for functionality.
+
+Yeoman allows us to create directive boilerplate quickly, and will wire it up in
+our app for us. To create our pip directive, you just need to do:
+
+#+BEGIN_SRC bash
+$ yo angular:directive pip
+#+END_SRC
+
+This will create a new directory ~app/scripts/directives~ and a new file in
+there called ~pip.js~. Open that up and check it out (I'll omit the 'use strict'
+from here on out for brevity, but you should always have it at the top of every
+file):
+
+#+BEGIN_SRC javascript
+angular.module('piprApp')
+  .directive('pip', function () {
+    return {
+      template: '<div></div>',
+      restrict: 'E',
+      link: function postLink(scope, element, attrs) {
+        element.text('this is the pip directive');
+      }
+    };
+  });
+#+END_SRC
+
+This isn't too far from what we want. Let's modify it a little bit and then I'll
+explain what all these parts mean!
+
+#+BEGIN_SRC javascript
+angular.module('piprApp')
+  .directive('pip', function () {
+      return {
+          restrict: "E",
+          transclude: true,
+          scope: {
+              pip: "=currentPip"
+          },
+          template: '<div ng-transclude id="{{pip.id}}" class="pip-box"></div>',
+          replace: true
+      };
+  });
+#+END_SRC
+
+All this directive does is set the html id to the pip id from the server, and
+automatically sets the ~.pip-box~ class on the div.
+
+First off, our directive returns what's called a *Directive Definition Object*,
+each attribute we use here is important, as they all have defaults, which we've
+overridden for a reason.
+
+~restrict:"E"~ means that this directive is looking for html elements named the
+same thing as the directive is named. Here the directive is named "pip", so it's
+looking for html tags called ~<pip>~. We could have restricted it to "A" for
+attribute, or "C" for class also (or any combination like "AE").
+
+~transclude~ is the next attribute, and despite its scary sounding name, it's a
+pretty simple concept. Normally, the directive wipes out the contents of the tag
+it is activated on, and replaces it with the template. *Transclusion* allows us
+to put those contents wherever we want in our template instead of throwing them
+away. For example if we have in our html:
+
+#+BEGIN_SRC html
+<pip>Test</pip>
+#+END_SRC
+A directive without transclusion renders this to:
+#+BEGIN_SRC html
+<pip><div></div></pip>
+#+END_SRC
+Whereas with transclusion on, we would get:
+#+BEGIN_SRC html
+<pip><div>Test</div></pip>
+#+END_SRC
+
+Next, we have the ~scope~ attribute. By default, directives have the scope of
+wherever they happen to be dropped in the html. This can be an issue since the
+directive really can't count on the scope having what it needs (although it
+could put it there if it needed to). By setting the scope attribute to an
+object, we're telling Angular to create what's called an *isolate scope*. All it
+means is that each instance of this directive plopped into your html will get
+its own scope which doesn't inherit from the outer scope it happens to be in. In
+order to set up our pip tag, we need to give it a pip object, and we get that
+object from the syntax:
+
+#+BEGIN_SRC javascript
+{ pip: '=currentPip'}
+#+END_SRC
+That allows us to pass in the pip like this:
+#+BEGIN_SRC html
+<pip currentPip="aPipFromTheCurrentScope">
+#+END_SRC
+
+The '=' syntax means we get a two-way binding to a property of the outer
+scope. Normally, the isolate scope locks out all the variables from the outer
+scope, so we do this so that the user of the pip directive can tell it which
+object to use as the pip.
+
+Just remember: the directive is totally blind to where it is in the DOM. It's a
+reusable component that doesn't know what controller it will end up in, and it
+doesn't know what properties are defined in whatever scope you've plopped it
+into. The best way to tell a directive what is going on is to pass it things it
+needs as attributes.
+
+The ~template~ attribute is fairly straightforward, it's what to put into the
+directive. You can see the ~ng-transclude~ attribute in use, that's how angular
+knows where to put the original contents. You can also see we can refer to the
+~pip~ object we've been passed in from the outside world.
+
+Finally, the ~replace~ attribute tells angular not to put our template inside of
+the ~<pip>~ tag it found in the html, but rather to replace it entirely.
+
+** Services
+
+Go back to the browser and check it out. That looks good, but if we want to be
+useful, we'll need to hook it up to a some kind of real backend. The server
+backend is something we may need access to in lots of different parts of the
+application, so the best way to expose it is to create what Angular calls
+a *service*.
+
+To create a service, go back to the command line and do:
+
+#+BEGIN_SRC bash
+$ yo angular:service Pipbackend
+#+END_SRC
+
+That will create a directory called ~app/scripts/services/~ along with a file
+called ~Pipbackend~ inside it. That's where we'll define our service. Open up
+that file and make it look like the following:
+
+#+BEGIN_SRC javascript
+angular.module('piprApp')
+  .service('Pipbackend', function Pipbackend($resource) {
+      this.pips = $resource('http://pippypips.herokuapp.com/api/pips/:id');
+  });
+#+END_SRC
+
+Briefly, what we've done here is use the ~$resource~ service provided by
+angular-resource to make an object that communicates to our preferred
+backend. Now, if any part of our app wants to talk to the backend, they just
+have to ask for Pipbackend. If the url of the backend changes, we only have to
+change it in one place. If we want to do testing without hitting the backend, we
+can replace the service with a dummy backend, and none of the other code needs
+to change.
+
+There is one extra step we need to do to make this service work for us, which is
+to add ~ngResource~ as a dependency for our module. We didn't create the
+~app/scripts/app.js~ file, yeoman did, but we need to alter it now to add a
+dependency (this is the top level file, and where routes are declared, but don't
+worry about that for now). Make app.js look like this:
+
+#+BEGIN_SRC javascript
+angular.module('piprApp', ['ngResource']) // only this line changes
+  .config(function ($routeProvider) {
+    $routeProvider
+      .when('/', {
+        templateUrl: 'views/main.html',
+        controller: 'MainCtrl'
+      })
+      .otherwise({
+        redirectTo: '/'
+      });
+  });
+#+END_SRC
+
+This file is why our main.html file is so clean. The index.html file has got all
+of the boilerplate stuff in it, and it has a small container that our piprApp
+populates.
+
+Now that we've got our backend connection, we need to change our ~MainCtrl~
+controller to use that backend instead of the fake pips we had before. Go back
+into ~app/scripts/controllers/main.js~ and edit it like so:
+
+#+BEGIN_SRC javascript
+angular.module('piprApp')
+    .controller('MainCtrl', function ($scope, Pipbackend) {
+        $scope.pips = Pipbackend.pips.query({limit: 10, offset: 0});
+    });
+#+END_SRC
+
+This is the magic of dependency injection. We just ask for the Pipbackend, and
+Angular gives it to us, no questions asked. The query() method comes from the
+~$resource~ module that our Pipbackend uses. It queries for all of the pips on
+the server, with the paging criteria we give it.
+
+** Getting Input from the User with ngModel
+
+Since we can now list pips from the server, the next thing we need to do is be
+able to create new pips of our own. Let's add the html for that back in
+~apps/views/main.html~ right above where we list all of the pips:
+
+#+BEGIN_SRC html
+...
+  <h1>Pipr</h1>
+  <form name="pipForm">
+    <input type="text" ng-model="newPip.name" placeholder="Name"/><br />
+    <textarea ng-model="newPip.pip" placeholder="pip up here..."/>
+    <b>{{100 - newPip.pip.length}}</b>
+    <button ng-click="makePip()"
+            class="btn btn-success">Post Pip</button>
+  </form>
+  <div ng-repeat="pip in pips">
+...
+#+END_SRC
+
+There is some new stuff here. ~ng-model~ is a convenient directive provided by
+Angular that lets us hook a form element right up to the current scope. Angular
+defines special directives for all html form controls, so we don't have to
+manually add keypress listeners, or access the text attribute directly, or any
+of that. Also, if the "newPip" variable isn't already in our current scope,
+ngModel creates it for us.
+
+ngModel is an example of a directive that triggers off an attribute (~restrict:
+A~), rather than being a tag like our ~<pip>~ tag was. The other new thing
+you'll notice is ~ng-click~ on the post button. This calls a function on the
+current scope. We haven't written ~makePip~ yet, but we'll do that next.
+
+Note: You may have noticed that we play fast and loose with attribute names like
+'ng-model' becoming a directive called 'ngModel'. That's because Angular
+normalizes all of these names from the html when we use them in the
+Javascript. So for example, 'ng-model', 'ngModel', 'ng:model', 'x-ng-model' and
+'data-ng-model' are all equivalent. That allows us to use the conventions of
+html and say 'current-pip', but in the Javascript we can use Javascript
+conventions and refer to 'currentPip'.
+
+You can try out the new form field in your browser. The countdown will work when
+you type in the pip field, but the post button won't do anything since we
+haven't hooked it up. Let's go back to the MainCtrl again in
+~app/scripts/controllers/main.js~ again and add the functionality we need.
+
+#+BEGIN_SRC javascript
+angular.module('piprApp')
+    .controller('MainCtrl', function ($scope, Pipbackend) {
+        $scope.refreshPips = function(){
+            Pipbackend.pips.query(
+                {limit: 10, offset: 0},
+                function(pipList){$scope.pips = pipList}
+            );
+        };
+        $scope.makePip = function(){
+            Pipbackend.pips.save($scope.newPip, function onSuccess(newPip){
+                $scope.newPip = {name: $scope.newPip.name};
+                $scope.refreshPips();
+            });
+        };
+        $scope.refreshPips();
+  });
+#+END_SRC
+
+This does a couple of new things. First, we made a function on the scope that
+refreshes the list of pips from the server. The scope is the right place to
+define functions like this. This function sets the ~$scope.pips~ value once the
+request is successful. We could have done something like this:
+
+#+BEGIN_SRC javascript
+$scope.pips = Pipbackend.pips.query(...);
+#+END_SRC
+
+This will work, because the query function from ngResource returns an empty
+object that it will populate automatically once the server responds. The problem
+is that this causes the pip list to flash since we empty it out while the server
+response is happening. Setting the new value in the callback keeps everything
+smooth.
+
+Also worth noting is that we clear out the ~$scope.newPip~ variable when saving,
+but keep the name the same so the user doesn't have to retype it.
+
+** Validation
+
+Now we can create pips and post them to the server, but there are some rules
+about the pips we'd like to enforce so that the server doesn't yell at us. The
+first rule is that a pip must be at most 100 characters long. Also, both the
+name and pip fields must have something in them. So let's add that constraint to
+the form using Angular's validation directives. We'll go into the
+~app/views/main.html~ and modify those two inputs like this:
+
+#+BEGIN_SRC html
+...
+<input type="text" required ng-model="newPip.name" placeholder="Name"/><br />
+<textarea ng-maxlength="100" required ng-model="newPip.pip" placeholder="pip up here..."/>
+...
+#+END_SRC
+
+In addition, we should enable or disable the post button based on whether the
+form is valid currently. Do that so:
+
+#+BEGIN_SRC html
+...
+<button ng-click="makePip()"
+        ng-disabled="pipForm.$invalid || pipForm.$pristine"
+        class="btn btn-success">Post Pip</button>
+...
+#+END_SRC
+
+If you try it out in the browser, you'll see that the button is disabled until
+we fill in both fields, and if we type more than 100 characters into the pip
+field, the button becomes disabled again. Neat and simple!
+
+There are more rules that the server uses to decide if an instance is valid, and
+we could codify them all using angular validation, but inevitably there will be
+some problems reported by the server that your client won't be able to
+prevent. Things like two users editing at the same time etc. Let's add an error
+box to report server errors. First edit ~main.html~ again to add the actual box
+right after our form:
+
+#+BEGIN_SRC html
+...
+</form>
+  <div class="alert alert-error" ng-show="error">{{error}}</div>
+<div ng-repeat="pip in pips">
+...
+#+END_SRC
+
+This will hide the alert when there is no error. Then add a failure callback to
+~makePip~ in ~main.js~:
+
+#+BEGIN_SRC javascript
+$scope.makePip = function(){
+    Pipbackend.pips.save(
+        $scope.newPip,
+        function onSuccess(newPip){
+            $scope.newPip = {name: $scope.newPip.name};
+            $scope.refreshPips();
+            $scope.error = null;
+        },function onFailure(response){
+            $scope.error = response.data.error;
+        });
+};
+#+END_SRC
+
+To test this out, try posting with a name longer than 100 characters.
+
+** Finishing Touches
+
+There are a few last things we'd like to add to our app.
+  - The ability to add tags to pips, and show them
+  - The ability to delete pips
+  - Show the creation date of the pips
+
+Here's the final version of ~main.html~:
+
+#+BEGIN_SRC html
+<div class="hero-unit">
+  <h1>Pipr</h1>
+  <form name="pipForm">
+    <input type="text" required 
+           ng-model="newPip.name" placeholder="Name"/><br />
+    <textarea ng-maxlength="100" required
+              ng-model="newPip.pip" placeholder="pip up here..."/>
+    <b>{{100 - newPip.pip.length}}</b>
+    <input type="text"
+           ng-model="newPip.tags" split-to-list />
+    <button ng-click="makePip()"
+            ng-disabled="pipForm.$invalid || pipForm.$pristine"
+            class="btn btn-success">Post Pip</button>
+  </form>
+  <div class="alert alert-error" ng-show="error">{{error}}</div>
+  <div ng-repeat="pip in pips">
+    <pip current-pip="pip" class="well">
+      <a class="close" ng-click="deletePip(pip.id)">&times;</a>
+      <b>{{pip.name}}</b>  <br>
+      <i>{{pip.pip}}</i>   <br ng-show="pip.tags">
+      <span ng-repeat="tag in pip.tags" class="label label-inverse">
+        {{tag}}
+      </span>
+      <br>@ {{pip.created | date:'medium'}}
+    </pip>
+  </div>
+</div>
+#+END_SRC
+
+You can see a couple of new things here. First is the *filter* we use when
+displaying the date. Filters are applied using the '|' character, and Angular
+comes with some useful filters built in like /uppercase/, /date/, and
+/currency/. Here we use the /date/ filter with an argument of 'medium' to show a
+human readable version of the pip creation date.
+
+We also added a delete button to every pip. You can see that when it's clicked,
+the /deletePip/ function will be called with the current pip's id. We'll write
+that function in a bit.
+
+The next interesting thing to notice is that we added an input for the tags from
+the user. The server, only accepts tags as a list of strings, so we need to
+split the raw input from the user before putting it into the model, and this is
+what the /splitToList/ directive does. That isn't a built-in directive however,
+so we need to write it. Let's do that now:
+
+#+BEGIN_SRC bash
+$ yo angular:directive splitToList
+#+END_SRC
+
+Then open up ~app/scripts/directives/splitToList.js~ and add the following:
+
+#+BEGIN_SRC javascript
+angular.module('piprApp')
+  .directive('splitToList', function () {
+      return {
+        restrict: 'A',
+        require: 'ngModel',
+        link: function (scope, element, attrs, ngModelCtrl) {
+            ngModelCtrl.$parsers.push(function(text){
+                return text.split(' ');
+            });
+        }
+    };
+  });
+#+END_SRC
+
+This is a completely different kind of directive than we made before. It's an
+attribute directive, and it has a requirement that an /ngModel/ directive
+already be applied on the element we're working on. Adding this ~require~
+property also makes it so the ngModel controller is passed to our linking
+function.
+
+What's a linking function? Simply put, it gets called after our directive is
+applied and lets us set things up for the directive. Here, all we want to do
+modify the ngModel's list of parsers. The parsers are all applied in order to
+the input from the text box before it is added to the model. We add a function
+that splits on spaces to the end of the pipeline so that our model only ever
+receives a list of strings.
+
+Finally, let's add our /deletePip/ function so that we can delete pips that we
+don't like. Here's the final version of our ~main.js~:
+
+#+BEGIN_SRC javascript
+angular.module('piprApp')
+    .controller('MainCtrl', function ($scope, Pipbackend) {
+        $scope.refreshPips = function(){
+            Pipbackend.pips.query(
+                {limit: 10, offset: 0},
+                function onSuccess(pipList){
+                    $scope.pips = pipList;
+                    $scope.clearError();
+                },
+                $scope.setError
+            );
+        };
+        $scope.makePip = function(){
+            Pipbackend.pips.save(
+                $scope.newPip,
+                function onSuccess(newPip){
+                    $scope.newPip = {name: $scope.newPip.name};
+                    $scope.refreshPips();
+                },
+                $scope.setError
+            );
+        };
+        $scope.deletePip = function(pipId) {
+            Pipbackend.pips.delete(
+                {id: pipId},
+                $scope.refreshPips,
+                $scope.setError);
+        };
+        $scope.setError = function(resp){ $scope.error = resp.data.error};
+        $scope.clearError = function(){ $scope.error = null };
+        $scope.refreshPips();
+  });
+#+END_SRC
+
+In addition to adding the /deletePip/ function, we also tidied up the error
+handling a bit so that you always know what went wrong. Here's the final source
+code tree for what we created:
+
+#+BEGIN_SRC bash
+app/scripts
+├── app.js
+├── controllers
+│   └── main.js
+├── directives
+│   ├── pip.js
+│   └── splitToList.js
+└── services
+    └── Pipbackend.js
+app/views
+└── main.html
+index.html
+#+END_SRC
+
+** Where to Go Next
+
+There's a lot more we could do to this app to get even more functionality. Here
+are some suggestions:
+
+ - Add the ability to page results using the limit and offset parameters to /query/
+ - Add a text box that filters pips based on their tags or content
+ - Automatically add tags to a pip by parsing the pip body for hash tags
+ - Add a refresh button to refresh the pips from the server
+
+In addition, here are some Angular resources that you'll want to look into if
+you're looking to build a real application:
+
+ - Angular-UI: http://angular-ui.github.io is a great way to start adding ui
+   functionality to your app
+ - Restangular: https://github.com/mgonto/restangular is a powerful alternative
+   to ngResource. It allows greater flexibility when interacting with RESTful
+   apis.
+
+Finally, the source code for this tutorial, as well as the server code can be
+found at https://github.com/deontologician/pipr. If you want to deploy your own
+pipr application on heroku, you can use the code there to do it.
