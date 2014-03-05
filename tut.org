@@ -1,5 +1,5 @@
 #+OPTIONS: toc:nil H:2 num:nil author:nil timestamp:nil title:nil
-* Diving into Angular
+* Picking up Angular
 
 ** What you will learn
 1. What AngularJS is for, and what makes it a good choice for building web apps
