@@ -1,6 +1,8 @@
 #+OPTIONS: toc:nil H:2 num:nil author:nil timestamp:nil title:nil
 * Picking up Angular
 
+Demo: http://pippypips.herokuapp.com
+
 ** What you will learn
 1. What AngularJS is for, and what makes it a good choice for building web apps
 2. How to get up and running quickly with angular using Yeoman and bower
