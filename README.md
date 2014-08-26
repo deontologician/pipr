@@ -3,6 +3,8 @@ pipr
 
 An AngularJS tutorial building a Twitter-like application called Pipr
 
+[Read the tutorial here](http://github.com/deontologician/pipr/blob/master/tut.org)
+
 To run on heroku, you'll need to attach a Redis instance and set the environment
 variable `REDIS_URL` to point to it.
 
